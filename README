@@ -1,0 +1,30 @@
+The credential to be provided for mode 2 and 3 is helloworld.
+
+This submission includes three files:
+1> sys_xintegrity.c: The file that implements the system call
+2> xhw1.c: the user level c file to make the system call
+3>hw1_header.h:  The common header file that contains the structure with the relevant fields gfor mode 1, 2 and 3.
+
+The system call implememts three modes of operation. In mode 1 it returns the existing integrity of the file or returns no data
+mode1:
+
+    Mode 1 takes 2 arguments the mode itself and the files whose integrity is to be calculated. The user may specify other arguments but they are ignored.
+    success returns 0 or the relevant error message otherwise.
+    
+    This mode simply returns the integrity of hte file. The integrity of the file is an extended attribute stored in variable user.integrity. This value is retrieve. But in case the file does not ontin hte parameter the programme returns no data available error. The main implementation is done in function "get_integrity_val" which is called from the case 1 of the sys_xintegrity after the basic sanity checks.
+
+mode 2:
+    Mode 2 takes the 3 arguments. These are the mode, the file whose checksum needs to be calculated and the user  credential. The user credential is hard coded in the file sys_xintegrity and must match that. The password is : helloworld. Here the third argument is the mandatory. In case not specified the the user level programme will complain.
+    success returns 0 or the relevant error message otherwise.
+
+    The mode calculates the file integrity and then writes it to the xattr of the file. IN case this is the extra credit this also writes the hash type in the xattr user.hash_type. The main implementation of the functionality is there in the function "calculate_integrity". This function checks if the specified crypto algo exists(which is not imnportant in the normal mode but is omportant n hte exta credit mode where the user might specify an errorneous value of the hash type). Then it reads the file one page at a time, updates thescatter list with the data so read and then calculates the hash. Finally when all the file is read the hash is finalized and written to the xattr.
+mode 3: 
+    This takes 5 arguments. the mode itself which should be 3. The filename the user credential. The fourth argument is flag and the fifth is mode. The sys call returns the file descriptor on successful execution. The mode and the flags can also be given to the syscall by passing meaningful flags such as O_CREAT in line no. 141 of xhw1 or the mode in line 141 of xhw1.
+    
+    Mode 3 gives us  a valid file descriptor in case the file has not been tampered with. this is doen by checking the hash value of the currents of the file matches with that of the value stored in the xattr. If so then the fiel is safe and then it looksfor an unused file descriptor, binds it to the file and returns the file descriptor. In case the file is tampered it returns an invalid file dscriptor.
+-----------------------------------------------------------------------------------
+The extra credit takes a switch -h with the next argument being the hash type.
+Therefore a valid input is 
+#./xhw1 -h sha1 2 test.txt helloworld
+
+The hash supported are everythng supported by the crypto API. This value is passed as the last argument of the function calculate_integrity-- algo. If the algo is exists then the file read and the algorith calculates the hash as per that algo. The value is then updated in xattr.another value that is changed is the xattr user.hash_type to the name of the algorithm used to calculate the hash.
